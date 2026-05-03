@@ -43,15 +43,50 @@
             background: var(--card-bg); border: 2px solid var(--neon-purple); padding: 30px;
             border-radius: 15px; text-align: center; box-shadow: 0 0 30px var(--neon-purple);
         }
+
+        /* PANTALLA DE REDIRECCIÓN PREMIUM (SHINE EFFECT) */
         #redirect-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 11000; flex-direction: column; justify-content: center; align-items: center;
         }
-        .loading-circle {
-            width: 60px; height: 60px; border: 4px solid #111; border-top: 4px solid var(--neon-green);
-            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px;
+        
+        .background-fx-redirection {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(176, 0, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 127, 0.1) 0%, transparent 50%);
+            z-index: -1;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .redirect-text-shine {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1rem, 5vw, 2.2rem);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), #fff, rgba(255,255,255,0.1));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shineText 2.5s linear infinite;
+        }
+
+        @keyframes shineText { to { background-position: 200% center; } }
+
+        /* ESTILO DEL TOAST */
+        #toast-container {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 20000; pointer-events: none;
+        }
+        .toast {
+            background: rgba(10, 10, 10, 0.95); border: 1px solid var(--neon-purple);
+            color: #fff; padding: 12px 25px; border-radius: 5px; font-family: 'Orbitron';
+            font-size: 0.7rem; letter-spacing: 1px; box-shadow: 0 0 20px rgba(176, 0, 255, 0.3);
+            display: flex; align-items: center; gap: 10px;
+            opacity: 0; transform: translateY(20px); transition: 0.4s;
+            margin-bottom: 8px;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
 
         .handler {
             position: fixed; top: 0; width: 100%; height: 60px;
@@ -60,7 +95,16 @@
             box-shadow: 0 -5px 25px var(--neon-purple);
             z-index: 1000; display: flex; justify-content: space-between;
             align-items: center; padding: 0 5%; backdrop-filter: blur(15px);
+            overflow: hidden;
         }
+
+        /* EFECTO BRILLITOS HANDLER */
+        .handler::after {
+            content: ''; position: absolute; top: 0; left: -150%; width: 150px; height: 100%;
+            background: linear-gradient(90deg, transparent, var(--neon-purple), var(--neon-green), transparent);
+            opacity: 0.4; filter: blur(10px); animation: sparkle-handler 5s infinite;
+        }
+        @keyframes sparkle-handler { 0% { left: -150%; } 100% { left: 250%; } }
 
         .handler-logo {
             font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900;
@@ -138,8 +182,10 @@
         .card-body { padding: 20px; flex-grow: 1; }
         .card-title { font-family: 'Orbitron'; font-size: 1.1rem; color: #fff; margin-bottom: 8px; }
 
-        /* ESTILO INFO CARD */
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 15px; font-size: 0.75rem; color: #888; }
+        .info-grid { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; 
+            font-family: 'Orbitron'; font-size: 0.7rem; color: #666; 
+        }
         .info-grid b { color: var(--neon-green); }
 
         .btn-dl {
@@ -159,8 +205,6 @@
         }
         .btn-dl:hover::after { left: 0; }
 
-        .footer-sig { margin-top: 60px; font-family: 'Orbitron'; font-size: 1.2rem; color: #151515; letter-spacing: 10px; text-align: center; }
-
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         @keyframes shine { to { background-position: 200% center; } }
     </style>
@@ -170,16 +214,21 @@
     <div id="particles-js"></div>
 
     <div id="redirect-screen">
-        <div class="loading-circle"></div>
-        <h2 style="font-family:'Orbitron'; color:var(--neon-green); letter-spacing:4px;">REDIRECCIONANDO...</h2>
+        <div class="background-fx-redirection"></div>
+        <div class="redirect-text-shine">
+            REDIRECCIONANDO
+            <span style="display:block; margin-top: 10px; font-size: 0.8rem; color: var(--neon-green); letter-spacing: 8px;">A LA DESCARGA</span>
+        </div>
     </div>
+
+    <div id="toast-container"></div>
 
     <div id="verify-modal">
         <div class="verify-box">
-            <h2 style="font-family:'Orbitron'; color:var(--neon-green); margin-bottom:10px; font-size: 1.1rem;">VERIFICA QUE NO ERES UN ROBOT</h2>
-            <p style="color:#aaa; font-size:0.8rem; margin-bottom:15px;">Para poder acceder a la descarga</p>
+            <h2 style="font-family:'Orbitron'; color:var(--neon-green); margin-bottom:10px; font-size: 1.1rem;">SECURITY PROTOCOL</h2>
+            <p style="color:#aaa; font-size:0.8rem; margin-bottom:15px;">Completa el captcha para continuar</p>
             <center><div class="g-recaptcha" data-sitekey="6LfEjtcsAAAAAG71aINsg_swsfg92qBRuh6U4TxZ" data-theme="dark"></div></center>
-            <button onclick="checkCaptcha()" style="margin-top:20px; width:100%; padding:15px; background:var(--neon-purple); border:none; color:#fff; font-family:'Orbitron'; font-weight:bold; cursor:pointer; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);">ACCEDER A DESCARGA</button>
+            <button onclick="checkCaptcha()" style="margin-top:20px; width:100%; padding:15px; background:var(--neon-purple); border:none; color:#fff; font-family:'Orbitron'; font-weight:bold; cursor:pointer; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);">VERIFICAR ACCESO</button>
         </div>
     </div>
 
@@ -201,18 +250,16 @@
         </div>
 
         <h1 class="main-title">WEB DE DESCARGAS OFICIAL</h1>
-        <p class="main-subtitle">web oficial para descargas de archivos de mi canal de Youtube, como hologramas, aimbot, apis, etc.</p>
+        <p class="main-subtitle">web oficial para descargas de archivos de mi canal de Youtube, como hologramas, aimbot, wallhack,etc.</p>
 
-        <h2 style="font-family:'Orbitron'; color:var(--neon-green); margin-bottom:25px; font-size:1.3rem; letter-spacing:3px;">ZONA DE DESCARGAS</h2>
+        <h2 style="font-family:'Orbitron'; color:var(--neon-green); margin-bottom:30px; font-size:1.2rem; letter-spacing:5px; border-left: 4px solid var(--neon-green); padding-left: 15px; align-self: flex-start;">ZONA DE DESCARGAS</h2>
 
         <div class="cards-container" id="cards-grid"></div>
 
-        <div style="margin-top:100px; text-align:center; font-family:'Orbitron'; opacity:0.3;">
-            <p style="letter-spacing:10px; font-size:1rem;">ALEJOMODZ</p>
-            <p style="font-size:0.6rem; color:var(--neon-purple); margin-top:5px;">SECURITY BY SAMUELHACK</p>
+        <div style="margin-top:100px; text-align:center; font-family:'Orbitron'; opacity:0.3; padding-bottom: 50px;">
+            <p style="letter-spacing:12px; font-size:1.1rem; color:#fff;">ALEJOMODZ</p>
+            <p style="font-size:0.6rem; color:var(--neon-purple); margin-top:8px; letter-spacing:3px;">SECURITY BY SAMUELHACK</p>
         </div>
-
-        <div class="footer-sig">ALEJO MODZ</div>
     </div>
 
     <script type="module">
@@ -233,6 +280,14 @@
         const db = getDatabase(app);
         let linkPendiente = "";
 
+        // --- LÓGICA DE FOTO DE PERFIL DINÁMICA ---
+        onValue(ref(db, 'config/perfil'), (snapshot) => {
+            if (snapshot.exists()) {
+                document.querySelector('.profile-img').src = snapshot.val();
+            }
+        });
+
+        // CONTADOR DE VISTAS ORIGINAL
         const viewRef = ref(db, 'stats/total_views');
         if (!localStorage.getItem('alejo_token_v1')) {
             runTransaction(viewRef, (count) => (count || 0) + 1);
@@ -240,6 +295,7 @@
         }
         onValue(viewRef, (snap) => { document.getElementById('view-count').innerText = snap.val() || 0; });
 
+        // CARGA DE DATOS FIREBASE + TRADUCCIONES + MASKING
         onValue(ref(db, 'descargas'), (snapshot) => {
             const data = snapshot.val();
             const grid = document.getElementById('cards-grid');
@@ -253,35 +309,86 @@
                             <div class="card-body">
                                 <h3 class="card-title">${item.nombre}</h3>
                                 <div class="info-grid">
-                                    <span>PESO: <b>${item.peso || '?? MB'}</b></span>
+                                    <span>PESO: <b>${item.peso || '--'}</b></span>
                                     <span>TIPO: <b>${item.tipo || 'APK'}</b></span>
-                                    <span>VERS: <b>${item.version || '1.0'}</b></span>
-                                    <span>SEC: <b>SAFE</b></span>
+                                    <span>VERSIÓN: <b>${item.version || '1.0'}</b></span>
+                                    <span>SAFE: <b>YES</b></span>
                                 </div>
-                                <button class="btn-dl" onclick="ghostDownload('${item.link}')">DESCARGAR</button>
+                                <button class="btn-dl" onclick="ghostDownload('${btoa(item.link)}')">DESCARGAR</button>
                             </div>
                         </div>`;
                 }
             }
         });
 
-        window.ghostDownload = function(link) {
-            linkPendiente = link;
+        // SISTEMA DE TOAST RE-CONSTRUIDO
+        window.customToast = function(msg) {
+            const container = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = 'toast show';
+            t.innerHTML = `<span style="color: var(--neon-purple);">●</span> ${msg}`;
+            container.appendChild(t);
+            setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(), 400); }, 3000);
+        };
+
+        // GHOST DOWNLOAD CON RATE LIMIT 24H
+        window.ghostDownload = function(encodedLink) {
+            const lastDl = localStorage.getItem('samuel_dl_limit');
+            const today = new Date().toDateString();
+
+            if (lastDl === today) {
+                window.customToast("LÍMITE DIARIO ALCANZADO (1/1)");
+                return;
+            }
+
+            linkPendiente = atob(encodedLink);
             document.getElementById('verify-modal').style.display = 'flex';
         };
 
+        // CHECK CAPTCHA CON TOKEN DE SESIÓN (5 MIN)
         window.checkCaptcha = function() {
-            if (grecaptcha.getResponse().length == 0) return;
+            if (grecaptcha.getResponse().length == 0) {
+                window.customToast("VERIFICA EL CAPTCHA PRIMERO");
+                return;
+            }
+
+            // CREAR TOKEN TEMPORAL
+            const sessionKey = Date.now();
+            sessionStorage.setItem('dl_auth', sessionKey);
+
             document.getElementById('verify-modal').style.display = 'none';
             document.getElementById('redirect-screen').style.display = 'flex';
-            setTimeout(() => { window.location.href = linkPendiente; }, 3000);
+            
+            setTimeout(() => {
+                const auth = sessionStorage.getItem('dl_auth');
+                const isValid = (Date.now() - auth) < 300000; // 5 minutos
+
+                if (auth && isValid) {
+                    localStorage.setItem('samuel_dl_limit', new Date().toDateString());
+                    window.location.href = linkPendiente;
+                } else {
+                    window.customToast("SESIÓN EXPIRADA. RECARGA.");
+                    location.reload();
+                }
+            }, 3500);
         }
+
+        // SEGURIDAD: DEBUGGER LOOP ANTI-INSPECCIÓN
+        setInterval(() => {
+            const start = performance.now();
+            debugger;
+            if (performance.now() - start > 100) {
+                document.body.innerHTML = "<div style='color:white;text-align:center;margin-top:20%;font-family:Orbitron'>SISTEMA PROTEGIDO POR SAMUELHACK</div>";
+            }
+        }, 500);
     </script>
 
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
-        document.onkeydown = e => { if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false; };
+        document.onkeydown = e => { 
+            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false; 
+        };
         particlesJS("particles-js", {
             "particles": {
                 "number": { "value": 75 },

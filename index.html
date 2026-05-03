@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ALEJO MODZ | SamuelHackV1</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+    <style>
+        :root {
+            --neon-purple: #b000ff;
+            --neon-green: #00ff7f;
+            --dark-bg: #000000;
+            --card-bg: rgba(12, 12, 12, 0.95);
+        }
+
+        /* BLOQUEO DE SELECCIÓN TOTAL */
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        #particles-js { position: fixed; width: 100%; height: 100%; z-index: 1; }
+
+        /* --- NUEVOS ESTILOS AGREGADOS --- */
+        #verify-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        .verify-box {
+            background: var(--card-bg); border: 2px solid var(--neon-purple); padding: 30px;
+            border-radius: 15px; text-align: center; box-shadow: 0 0 30px var(--neon-purple);
+        }
+        #redirect-screen {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 11000; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .loading-circle {
+            width: 60px; height: 60px; border: 4px solid #111; border-top: 4px solid var(--neon-green);
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* --- FIN ESTILOS NUEVOS --- */
+
+        .handler {
+            position: fixed; top: 0; width: 100%; height: 60px;
+            background: rgba(0, 0, 0, 0.95);
+            border-bottom: 1px solid var(--neon-purple);
+            box-shadow: 0 -5px 25px var(--neon-purple);
+            z-index: 1000; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 5%; backdrop-filter: blur(15px);
+        }
+
+        .handler-logo {
+            font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900;
+            letter-spacing: 2px; color: #fff; text-shadow: 0 0 12px var(--neon-purple);
+        }
+
+        .status-online {
+            display: flex; align-items: center; gap: 8px; font-family: 'Orbitron';
+            font-size: 0.65rem; color: var(--neon-green); border: 1px solid var(--neon-green);
+            padding: 4px 12px; border-radius: 20px; box-shadow: 0 0 10px rgba(0, 255, 127, 0.3);
+        }
+
+        .dot { height: 6px; width: 6px; background: var(--neon-green); border-radius: 50%; animation: pulse 1.5s infinite; }
+
+        .user-stats-panel {
+            position: fixed; top: 60px; width: 100%; z-index: 999;
+            display: flex; justify-content: center; background: rgba(0, 0, 0, 0.85);
+            border-bottom: 1px solid rgba(176, 0, 255, 0.1); padding: 8px 0;
+        }
+
+        .stat-badge {
+            font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: #fff;
+            display: flex; gap: 20px; letter-spacing: 1px;
+        }
+
+        .stat-value { color: var(--neon-purple); font-weight: 800; }
+
+        #download-alert {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 320px; background: var(--card-bg); border: 2px solid var(--neon-green);
+            padding: 25px; z-index: 5000; border-radius: 15px; text-align: center;
+            box-shadow: 0 0 40px rgba(0, 255, 127, 0.2); backdrop-filter: blur(10px);
+        }
+
+        .content-wrapper {
+            position: relative; z-index: 10; width: 100%;
+            display: flex; flex-direction: column; align-items: center;
+            padding-top: 140px; padding-bottom: 50px; padding-left: 5%; padding-right: 5%;
+        }
+
+        .profile-frame {
+            position: relative; width: 160px; height: 160px;
+            margin-bottom: 25px; border-radius: 50%;
+            border: 2px solid var(--neon-purple); padding: 5px;
+            box-shadow: 0 0 30px rgba(176, 0, 255, 0.5);
+        }
+
+        .profile-img { width: 100%; height: 100%; border-radius: 50%; background: #111; object-fit: cover; }
+
+        .main-title {
+            font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(1.4rem, 6vw, 2.2rem);
+            text-align: center; text-transform: uppercase; margin-bottom: 12px;
+            background: linear-gradient(90deg, #fff, var(--neon-purple), #fff);
+            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 4s linear infinite;
+        }
+
+        .main-subtitle {
+            max-width: 550px; text-align: center; color: #aaa; font-size: 0.95rem;
+            margin-bottom: 50px; line-height: 1.5; font-weight: 500;
+        }
+
+        .cards-container {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 25px; width: 100%; max-width: 1000px;
+        }
+
+        /* BORDES MORADOS FIJOS */
+        .card {
+            background: var(--card-bg); 
+            border: 1px solid var(--neon-purple);
+            border-radius: 12px; position: relative; transition: 0.4s;
+            overflow: hidden; display: flex; flex-direction: column;
+            box-shadow: 0 0 15px rgba(176, 0, 255, 0.1);
+        }
+
+        .card:hover { 
+            border-color: var(--neon-green); 
+            transform: translateY(-8px);
+            box-shadow: 0 0 20px rgba(0, 255, 127, 0.2);
+        }
+
+        .image-slot {
+            width: 100%; height: 160px; background: #080808;
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+
+        .image-slot img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+
+        .card-body { padding: 20px; flex-grow: 1; }
+        .card-title { font-family: 'Orbitron'; font-size: 1.1rem; color: #fff; margin-bottom: 8px; }
+        .card-desc { color: #888; font-size: 0.85rem; height: 40px; overflow: hidden; margin-bottom: 15px; }
+
+        .btn-dl {
+            display: block; width: 100%; padding: 14px;
+            background: transparent; color: #fff; border: 1px solid #333;
+            font-family: 'Orbitron'; font-weight: 700; text-decoration: none; text-align: center;
+            position: relative; overflow: hidden; transition: 0.3s;
+            clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);
+            cursor: pointer;
+        }
+
+        .btn-dl:hover { border-color: var(--neon-purple); }
+        .btn-dl::after {
+            content: 'DOWNLOAD'; position: absolute; top:0; left: -100%; width: 100%; height: 100%;
+            background: var(--neon-purple); color: #000; display: flex; align-items: center; justify-content: center;
+            transition: 0.4s;
+        }
+        .btn-dl:hover::after { left: 0; }
+
+        .footer-sig { margin-top: 60px; font-family: 'Orbitron'; font-size: 1.2rem; color: #151515; letter-spacing: 10px; text-align: center; }
+
+        #hidden-frame { display: none; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes shine { to { background-position: 200% center; } }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="particles-js"></div>
+
+    <div id="redirect-screen">
+        <div class="loading-circle"></div>
+        <h2 style="font-family:'Orbitron'; color:var(--neon-green); letter-spacing:4px;">REDIRECCIONANDO...</h2>
+        <p style="color:#555; margin-top:10px;">Enlazando con Mediafire</p>
+    </div>
+
+    <div id="verify-modal">
+        <div class="verify-box">
+            <h2 style="font-family:'Orbitron'; color:var(--neon-green); margin-bottom:20px; font-size: 1.1rem;">VERIFICACIÓN HUMANA</h2>
+            <div class="g-recaptcha" data-sitekey="TU_CLAVE_AQUI" data-theme="dark"></div>
+            <button onclick="checkCaptcha()" style="margin-top:20px; width:100%; padding:15px; background:var(--neon-purple); border:none; color:#fff; font-family:'Orbitron'; font-weight:bold; cursor:pointer; clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);">ACCEDER A DESCARGA</button>
+            <p onclick="document.getElementById('verify-modal').style.display='none'" style="margin-top:15px; color:#444; font-size:0.8rem; cursor:pointer;">Cancelar</p>
+        </div>
+    </div>
+
+    <header class="handler">
+        <div class="handler-logo">ALEJO MODZ</div>
+        <div class="status-online"><div class="dot"></div> ONLINE</div>
+    </header>
+
+    <div id="download-alert">
+        <h3 style="font-family:'Orbitron'; color:var(--neon-green); margin-bottom:10px;">VÍNCULO DETECTADO</h3>
+        <p style="font-size:0.85rem; color:#ccc; margin-bottom:20px;">Preparando descarga segura en segundo plano...</p>
+        <button id="confirm-dl" style="background:var(--neon-green); border:none; padding:12px 25px; font-family:'Orbitron'; font-weight:900; color:#000; cursor:pointer; width:100%; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">OBTENER ARCHIVO</button>
+    </div>
+
+    <div class="user-stats-panel">
+        <div class="stat-badge">
+            <span>VISUALIZACIONES: <span class="stat-value" id="view-count">0</span></span>
+            <span>SEGURIDAD: <span class="stat-value">samuelHackV1</span></span>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="profile-frame">
+            <img src="https://via.placeholder.com/180/000000/b000ff?text=ALEJO" class="profile-img" id="main-pfp">
+        </div>
+
+        <h1 class="main-title">WEB DE DESCARGAS OFICIAL</h1>
+        <p class="main-subtitle">web oficial para descargas de archivos de mi canal de Youtube, como hologramas, aimbot, apis, etc.</p>
+
+        <div class="cards-container" id="cards-grid"></div>
+
+        <div class="footer-sig">ALEJO MODZ</div>
+    </div>
+
+    <iframe id="hidden-frame" name="hidden-frame"></iframe>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4vcFQgUN4VFdYpvvfLRU3aOOmqHe2BBM",
+            authDomain: "alejomodzweb.firebaseapp.com",
+            databaseURL: "https://alejomodzweb-default-rtdb.firebaseio.com",
+            projectId: "alejomodzweb",
+            storageBucket: "alejomodzweb.firebasestorage.app",
+            messagingSenderId: "204566201399",
+            appId: "1:204566201399:web:21937da0115d7ba83d2bb2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let linkPendiente = "";
+
+        const viewRef = ref(db, 'stats/total_views');
+        if (!localStorage.getItem('alejo_token_v1')) {
+            runTransaction(viewRef, (count) => (count || 0) + 1);
+            localStorage.setItem('alejo_token_v1', 'true');
+        }
+        onValue(viewRef, (snap) => {
+            document.getElementById('view-count').innerText = snap.val() || 0;
+        });
+
+        onValue(ref(db, 'descargas'), (snapshot) => {
+            const data = snapshot.val();
+            const grid = document.getElementById('cards-grid');
+            grid.innerHTML = ''; 
+            if (data) {
+                for (let id in data) {
+                    const item = data[id];
+                    grid.innerHTML += `
+                        <div class="card">
+                            <div class="image-slot"><img src="${item.imgBase64}"></div>
+                            <div class="card-body">
+                                <h3 class="card-title">${item.nombre}</h3>
+                                <p class="card-desc">${item.descripcion || ''}</p>
+                                <button class="btn-dl" onclick="ghostDownload('${item.link}')">DESCARGAR</button>
+                            </div>
+                        </div>`;
+            }
+            }
+        });
+
+        // MODIFICADO PARA CAPTCHA Y REDIRECCIÓN
+        window.ghostDownload = function(link) {
+            linkPendiente = link;
+            document.getElementById('verify-modal').style.display = 'flex';
+        };
+
+        window.checkCaptcha = function() {
+            const response = grecaptcha.getResponse();
+            if (response.length == 0) {
+                alert("Verifica que no eres un robot, bro.");
+                return;
+            }
+            document.getElementById('verify-modal').style.display = 'none';
+            mostrarRedireccion();
+        }
+
+        function mostrarRedireccion() {
+            document.getElementById('redirect-screen').style.display = 'flex';
+            setTimeout(() => {
+                window.location.href = linkPendiente;
+            }, 3000); // 3 Segundos de finta profesional
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // SEGURIDAD SAMUELHACKV1 REFORZADA
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123 || 
+                (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+                (e.ctrlKey && e.keyCode == 85)) {
+                return false;
+            }
+        };
+
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 75 },
+                "color": { "value": ["#b000ff", "#00ff7f"] },
+                "shape": { "type": "circle" },
+                "size": { "value": 1.2 },
+                "line_linked": { "enable": true, "distance": 110, "color": "#b000ff", "opacity": 0.15 },
+                "move": { "enable": true, "speed": 1.2 }
+            }
+        });
+    </script>
+</body>
+</html>

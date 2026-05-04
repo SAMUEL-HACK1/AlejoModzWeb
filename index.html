@@ -34,6 +34,76 @@
 
         #particles-js { position: fixed; width: 100%; height: 100%; z-index: 1; }
 
+        /* ESTILO CARD FLOTANTE DE INICIO */
+        #overlay-inicio {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); z-index: 100000; display: flex; 
+            justify-content: center; align-items: flex-start; 
+            backdrop-filter: blur(12px); padding-top: 50px;
+        }
+
+        .card-inicio {
+            background: #0c0c0c; border: 1px solid var(--neon-purple); padding: 30px;
+            border-radius: 15px; text-align: center; box-shadow: 0 0 40px rgba(176, 0, 255, 0.3);
+            width: 90%; max-width: 480px; position: relative;
+            transform: translateY(-150%);
+            animation: slideDown 0.8s cubic-bezier(0.17, 0.76, 0.58, 0.99) forwards;
+        }
+
+        @keyframes slideDown { to { transform: translateY(0); } }
+
+        .card-inicio h2 {
+            font-family: 'Orbitron'; font-weight: 900; font-size: 1.2rem;
+            color: #fff; margin-bottom: 20px; letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--neon-purple);
+        }
+
+        .card-inicio p {
+            font-family: 'Rajdhani'; color: #ccc; font-size: 1rem;
+            line-height: 1.5; margin-bottom: 20px; text-align: left;
+        }
+
+        .credits-inicio {
+            font-family: 'Orbitron'; font-size: 0.65rem; color: #888;
+            text-align: left; border-left: 2px solid var(--neon-green);
+            padding-left: 10px; margin-bottom: 25px;
+        }
+        .credits-inicio b { color: var(--neon-green); }
+
+        .check-container {
+            display: flex; align-items: center; justify-content: center;
+            gap: 12px; margin-bottom: 25px; cursor: pointer;
+            font-family: 'Rajdhani'; color: #fff; font-size: 0.9rem;
+        }
+
+        .custom-check {
+            width: 20px; height: 20px; border: 1px solid var(--neon-purple);
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s; position: relative;
+        }
+
+        #real-check { display: none; }
+        #real-check:checked + .custom-check { background: var(--neon-purple); }
+        #real-check:checked + .custom-check::after {
+            content: '✓'; color: #fff; font-size: 14px;
+        }
+
+        .btn-inicio {
+            width: 100%; padding: 15px; background: transparent;
+            color: #fff; border: 1px solid #333; font-family: 'Orbitron';
+            font-weight: 700; cursor: pointer; position: relative;
+            overflow: hidden; transition: 0.3s;
+            clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);
+        }
+        .btn-inicio:hover { border-color: var(--neon-purple); }
+        .btn-inicio::after {
+            content: 'ENTRAR'; position: absolute; top:0; left: -100%;
+            width: 100%; height: 100%; background: var(--neon-purple);
+            color: #000; display: flex; align-items: center; 
+            justify-content: center; transition: 0.4s;
+        }
+        .btn-inicio:hover::after { left: 0; }
+
         #verify-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center;
@@ -98,7 +168,6 @@
             overflow: hidden;
         }
 
-        /* EFECTO BRILLITOS HANDLER */
         .handler::after {
             content: ''; position: absolute; top: 0; left: -150%; width: 150px; height: 100%;
             background: linear-gradient(90deg, transparent, var(--neon-purple), var(--neon-green), transparent);
@@ -213,6 +282,25 @@
 
     <div id="particles-js"></div>
 
+    <div id="overlay-inicio">
+        <div class="card-inicio">
+            <h2>ALEJOMODZWEB</h2>
+            <p>
+                Hola chicos, esta página fue creada con el fin de que tengan acceso a mis archivos de una forma más sencilla, aquí podrán encontrar todo lo que suba a mi canal de YouTube, espero les guste, recuerden suscribirse al canal sino lo están.
+            </p>
+            <div class="credits-inicio">
+                Desarrollador : <b>SamuelHack</b><br>
+                Dueño : <b>AlejoModz</b>
+            </div>
+            <label class="check-container">
+                <input type="checkbox" id="real-check">
+                <div class="custom-check"></div>
+                ACEPTO LOS TÉRMINOS Y CONDICIONES
+            </label>
+            <button class="btn-inicio" onclick="validarEntrada()">ENTRAR</button>
+        </div>
+    </div>
+
     <div id="redirect-screen">
         <div class="background-fx-redirection"></div>
         <div class="redirect-text-shine">
@@ -279,15 +367,34 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         let linkPendiente = "";
+        let idPendiente = "";
 
-        // --- LÓGICA DE FOTO DE PERFIL DINÁMICA ---
+        // LÓGICA DE INICIO (CARD + TOAST)
+        window.validarEntrada = function() {
+            if (!document.getElementById('real-check').checked) {
+                window.customToast("MARCA EL CHECK PARA CONTINUAR");
+                return;
+            }
+            const card = document.querySelector('.card-inicio');
+            const overlay = document.getElementById('overlay-inicio');
+            card.style.transform = "translateY(-150%)";
+            card.style.transition = "0.8s cubic-bezier(0.17, 0.76, 0.58, 0.99)";
+            setTimeout(() => {
+                overlay.style.opacity = "0";
+                overlay.style.transition = "0.5s";
+                window.customToast("BIENVENIDO A LA WEB");
+                setTimeout(() => { overlay.style.display = 'none'; }, 500);
+            }, 600);
+        };
+
+        // FOTO DE PERFIL DINÁMICA
         onValue(ref(db, 'config/perfil'), (snapshot) => {
             if (snapshot.exists()) {
                 document.querySelector('.profile-img').src = snapshot.val();
             }
         });
 
-        // CONTADOR DE VISTAS ORIGINAL
+        // CONTADOR DE VISTAS
         const viewRef = ref(db, 'stats/total_views');
         if (!localStorage.getItem('alejo_token_v1')) {
             runTransaction(viewRef, (count) => (count || 0) + 1);
@@ -295,7 +402,7 @@
         }
         onValue(viewRef, (snap) => { document.getElementById('view-count').innerText = snap.val() || 0; });
 
-        // CARGA DE DATOS FIREBASE + TRADUCCIONES + MASKING
+        // CARGA DE CARDS CON ID ÚNICO
         onValue(ref(db, 'descargas'), (snapshot) => {
             const data = snapshot.val();
             const grid = document.getElementById('cards-grid');
@@ -314,14 +421,13 @@
                                     <span>VERSIÓN: <b>${item.version || '1.0'}</b></span>
                                     <span>SAFE: <b>YES</b></span>
                                 </div>
-                                <button class="btn-dl" onclick="ghostDownload('${btoa(item.link)}')">DESCARGAR</button>
+                                <button class="btn-dl" onclick="ghostDownload('${btoa(item.link)}', '${id}')">DESCARGAR</button>
                             </div>
                         </div>`;
                 }
             }
         });
 
-        // SISTEMA DE TOAST RE-CONSTRUIDO
         window.customToast = function(msg) {
             const container = document.getElementById('toast-container');
             const t = document.createElement('div');
@@ -331,74 +437,7 @@
             setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(), 400); }, 3000);
         };
 
-        // GHOST DOWNLOAD CON RATE LIMIT 24H
-        window.ghostDownload = function(encodedLink) {
-            const lastDl = localStorage.getItem('samuel_dl_limit');
-            const today = new Date().toDateString();
-
-            if (lastDl === today) {
-                window.customToast("LÍMITE DIARIO ALCANZADO (1/1)");
-                return;
-            }
-
-            linkPendiente = atob(encodedLink);
-            document.getElementById('verify-modal').style.display = 'flex';
-        };
-
-        // CHECK CAPTCHA CON TOKEN DE SESIÓN (5 MIN)
-        window.checkCaptcha = function() {
-            if (grecaptcha.getResponse().length == 0) {
-                window.customToast("VERIFICA EL CAPTCHA PRIMERO");
-                return;
-            }
-
-            // CREAR TOKEN TEMPORAL
-            const sessionKey = Date.now();
-            sessionStorage.setItem('dl_auth', sessionKey);
-
-            document.getElementById('verify-modal').style.display = 'none';
-            document.getElementById('redirect-screen').style.display = 'flex';
-            
-            setTimeout(() => {
-                const auth = sessionStorage.getItem('dl_auth');
-                const isValid = (Date.now() - auth) < 300000; // 5 minutos
-
-                if (auth && isValid) {
-                    localStorage.setItem('samuel_dl_limit', new Date().toDateString());
-                    window.location.href = linkPendiente;
-                } else {
-                    window.customToast("SESIÓN EXPIRADA. RECARGA.");
-                    location.reload();
-                }
-            }, 3500);
-        }
-
-        // SEGURIDAD: DEBUGGER LOOP ANTI-INSPECCIÓN
-        setInterval(() => {
-            const start = performance.now();
-            debugger;
-            if (performance.now() - start > 100) {
-                document.body.innerHTML = "<div style='color:white;text-align:center;margin-top:20%;font-family:Orbitron'>SISTEMA PROTEGIDO POR SAMUELHACK</div>";
-            }
-        }, 500);
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script>
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.onkeydown = e => { 
-            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false; 
-        };
-        particlesJS("particles-js", {
-            "particles": {
-                "number": { "value": 75 },
-                "color": { "value": ["#b000ff", "#00ff7f"] },
-                "shape": { "type": "circle" },
-                "size": { "value": 1.2 },
-                "line_linked": { "enable": true, "distance": 110, "color": "#b000ff", "opacity": 0.15 },
-                "move": { "enable": true, "speed": 1.2 }
-            }
-        });
-    </script>
-</body>
-</html>
+        // GHOST DOWNLOAD POR ID (1 descarga por archivo)
+        window.ghostDownload = function(encodedLink, id) {
+            // Revisar si este ID específico ya fue descargado hoy
+            const downloa

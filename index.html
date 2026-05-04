@@ -34,23 +34,25 @@
 
         #particles-js { position: fixed; width: 100%; height: 100%; z-index: 1; }
 
-        /* ESTILO CARD FLOTANTE DE INICIO */
+        /* ESTILO CARD FLOTANTE - CENTRADO TOTAL */
         #overlay-inicio {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92); z-index: 100000; display: flex; 
-            justify-content: center; align-items: flex-start; 
-            backdrop-filter: blur(12px); padding-top: 50px;
+            background: rgba(0,0,0,0.95); z-index: 100000; 
+            display: flex; justify-content: center; align-items: center; /* CARD EN EL MEDIO */
+            backdrop-filter: blur(12px);
         }
 
         .card-inicio {
             background: #0c0c0c; border: 1px solid var(--neon-purple); padding: 30px;
             border-radius: 15px; text-align: center; box-shadow: 0 0 40px rgba(176, 0, 255, 0.3);
             width: 90%; max-width: 480px; position: relative;
-            transform: translateY(-150%);
-            animation: slideDown 0.8s cubic-bezier(0.17, 0.76, 0.58, 0.99) forwards;
+            transform: scale(0.5); opacity: 0;
+            animation: emerge 0.6s cubic-bezier(0.17, 0.76, 0.58, 0.99) forwards;
         }
 
-        @keyframes slideDown { to { transform: translateY(0); } }
+        @keyframes emerge { 
+            to { transform: scale(1); opacity: 1; } 
+        }
 
         .card-inicio h2 {
             font-family: 'Orbitron'; font-weight: 900; font-size: 1.2rem;
@@ -94,6 +96,7 @@
             font-weight: 700; cursor: pointer; position: relative;
             overflow: hidden; transition: 0.3s;
             clip-path: polygon(5% 0, 100% 0, 100% 70%, 95% 100%, 0 100%, 0 30%);
+            display: block;
         }
         .btn-inicio:hover { border-color: var(--neon-purple); }
         .btn-inicio::after {
@@ -104,6 +107,7 @@
         }
         .btn-inicio:hover::after { left: 0; }
 
+        /* MODAL Y REDIRECCIÓN */
         #verify-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center;
@@ -114,7 +118,6 @@
             border-radius: 15px; text-align: center; box-shadow: 0 0 30px var(--neon-purple);
         }
 
-        /* PANTALLA DE REDIRECCIÓN PREMIUM (SHINE EFFECT) */
         #redirect-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 11000; flex-direction: column; justify-content: center; align-items: center;
@@ -143,7 +146,6 @@
 
         @keyframes shineText { to { background-position: 200% center; } }
 
-        /* ESTILO DEL TOAST */
         #toast-container {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             z-index: 20000; pointer-events: none;
@@ -369,21 +371,22 @@
         let linkPendiente = "";
         let idPendiente = "";
 
-        // LÓGICA DE INICIO (CARD + TOAST)
+        // FUNCIÓN DE ENTRADA CORREGIDA
         window.validarEntrada = function() {
-            if (!document.getElementById('real-check').checked) {
+            const check = document.getElementById('real-check');
+            if (!check.checked) {
                 window.customToast("MARCA EL CHECK PARA CONTINUAR");
                 return;
             }
-            const card = document.querySelector('.card-inicio');
             const overlay = document.getElementById('overlay-inicio');
-            card.style.transform = "translateY(-150%)";
-            card.style.transition = "0.8s cubic-bezier(0.17, 0.76, 0.58, 0.99)";
+            overlay.style.transition = "0.6s cubic-bezier(0.17, 0.76, 0.58, 0.99)";
+            overlay.style.opacity = "0";
+            overlay.style.pointerEvents = "none";
+            
+            window.customToast("BIENVENIDO A LA WEB");
+            
             setTimeout(() => {
-                overlay.style.opacity = "0";
-                overlay.style.transition = "0.5s";
-                window.customToast("BIENVENIDO A LA WEB");
-                setTimeout(() => { overlay.style.display = 'none'; }, 500);
+                overlay.style.display = 'none';
             }, 600);
         };
 
@@ -402,7 +405,7 @@
         }
         onValue(viewRef, (snap) => { document.getElementById('view-count').innerText = snap.val() || 0; });
 
-        // CARGA DE CARDS CON ID ÚNICO
+        // CARGA DE CARDS
         onValue(ref(db, 'descargas'), (snapshot) => {
             const data = snapshot.val();
             const grid = document.getElementById('cards-grid');
@@ -437,7 +440,67 @@
             setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(), 400); }, 3000);
         };
 
-        // GHOST DOWNLOAD POR ID (1 descarga por archivo)
         window.ghostDownload = function(encodedLink, id) {
-            // Revisar si este ID específico ya fue descargado hoy
-            const downloa
+            const downloadedIDs = JSON.parse(localStorage.getItem('dl_ids_v1') || "[]");
+            if (downloadedIDs.includes(id)) {
+                window.customToast("ESTE ARCHIVO YA FUE DESCARGADO");
+                return;
+            }
+            linkPendiente = atob(encodedLink);
+            idPendiente = id;
+            document.getElementById('verify-modal').style.display = 'flex';
+        };
+
+        window.checkCaptcha = function() {
+            if (grecaptcha.getResponse().length == 0) {
+                window.customToast("VERIFICA EL CAPTCHA PRIMERO");
+                return;
+            }
+            const sessionKey = Date.now();
+            sessionStorage.setItem('dl_auth', sessionKey);
+            document.getElementById('verify-modal').style.display = 'none';
+            document.getElementById('redirect-screen').style.display = 'flex';
+            
+            setTimeout(() => {
+                const auth = sessionStorage.getItem('dl_auth');
+                const isValid = (Date.now() - auth) < 300000;
+                if (auth && isValid) {
+                    const downloadedIDs = JSON.parse(localStorage.getItem('dl_ids_v1') || "[]");
+                    downloadedIDs.push(idPendiente);
+                    localStorage.setItem('dl_ids_v1', JSON.stringify(downloadedIDs));
+                    window.location.href = linkPendiente;
+                } else {
+                    window.customToast("SESIÓN EXPIRADA. RECARGA.");
+                    location.reload();
+                }
+            }, 3500);
+        }
+
+        setInterval(() => {
+            const start = performance.now();
+            debugger;
+            if (performance.now() - start > 100) {
+                document.body.innerHTML = "<div style='color:white;text-align:center;margin-top:20%;font-family:Orbitron'>SISTEMA PROTEGIDO POR SAMUELHACK</div>";
+            }
+        }, 500);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.onkeydown = e => { 
+            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false; 
+        };
+        particlesJS("particles-js", {
+            "particles": {
+                "number": { "value": 75 },
+                "color": { "value": ["#b000ff", "#00ff7f"] },
+                "shape": { "type": "circle" },
+                "size": { "value": 1.2 },
+                "line_linked": { "enable": true, "distance": 110, "color": "#b000ff", "opacity": 0.15 },
+                "move": { "enable": true, "speed": 1.2 }
+            }
+        });
+    </script>
+</body>
+</html>
